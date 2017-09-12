@@ -1,5 +1,6 @@
 'use strict';
 var Alexa = require('alexa-sdk');
+var Holidays = require('date-holidays');
 
 //=========================================================================================================================================
 //TODO: The items below this comment need your attention.
@@ -9,15 +10,30 @@ var Alexa = require('alexa-sdk');
 //Make sure to enclose your value in quotes, like this: var APP_ID = "amzn1.ask.skill.bb4045e6-b3e8-4133-b650-72923c5980f1";
 var APP_ID = undefined;
 
-var SKILL_NAME = "Dice Roller";
+var SKILL_NAME = "Holiday Calendar";
 var GET_FACT_MESSAGE = "Here's your result: ";
-var HELP_MESSAGE = "You can say tell me to roll dice, or, you can say exit... What can I help you with?";
+var HELP_MESSAGE = "You can ask me to tell me what are the upcoming holidays, or, you can say exit... What can I help you with?";
 var HELP_REPROMPT = "What can I help you with?";
 var STOP_MESSAGE = "Goodbye!";
 
+// My code starts here
 
+var today = new Date();
+var hd = new Holidays('US');
+var year = today.getFullYear();
+var holidaysThisYear = hd.getHolidays(year).concat(hd.getHolidays(year +1));
+var remainingHolidays = holidaysThisYear.filter(function(dates) { 
+  dates.date = new Date(dates.date);
+  
+  if (dates.date - today > 0)
+  {
+    return dates;
+  }
+});
 
-var data = [];
+var holidayString = "The next holiday is " + remainingHolidays[0].name + " on " + remainingHolidays[0].date.toDateString() + ". Next is " + remainingHolidays[1].name + " on " + remainingHolidays[1].date.toDateString() + ". Finally, " + remainingHolidays[0].name + " is on " + remainingHolidays[0].date.toDateString() + ".";
+
+var data = holidayString;
 
 //=========================================================================================================================================
 //Editing anything below this line might break your skill.  
@@ -31,14 +47,11 @@ exports.handler = function(event, context, callback) {
 
 var handlers = {
     'LaunchRequest': function () {
-        this.emit('GetNewFactIntent');
+        this.emit('GetHolidayDataIntent');
     },
-    'GetNewFactIntent': function () {
-        var factArr = data;
-        var factIndex = Math.floor(Math.random() * factArr.length);
-        var randomFact = factArr[factIndex];
-        var speechOutput = GET_FACT_MESSAGE + randomFact;
-        this.emit(':tellWithCard', speechOutput, SKILL_NAME, randomFact)
+    'GetHolidayDataIntent': function () {
+        var speechOutput = GET_FACT_MESSAGE + data;
+        this.emit(':tellWithCard', speechOutput, SKILL_NAME, data);
     },
     'AMAZON.HelpIntent': function () {
         var speechOutput = HELP_MESSAGE;
